@@ -1,0 +1,2 @@
+"""StudyHub Django project package."""
+

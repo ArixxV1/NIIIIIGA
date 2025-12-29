@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.title }} — Тест — StudyHub{% endblock %}
+
+{% block content %}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'subject_detail' test.topic.subject.id %}">{{ test.topic.subject.name }}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'topic_detail' test.topic.id %}">{{ test.topic.name }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Тест</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">{{ test.title }}</h1>
+      <div class="sh-muted">{{ test.topic.name }}</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'topic_detail' test.topic.id %}">← К теме</a>
+  </div>
+
+  {% if questions %}
+    <div class="sh-glass sh-card p-3 p-lg-4 mb-3" id="testMeta" data-total="{{ questions|length }}">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="small sh-muted">
+          <i class="bi bi-list-check me-1"></i>
+          Вопросов: <span class="fw-semibold sh-kbd">{{ questions|length }}</span>
+        </div>
+        <div class="small sh-muted">
+          Отвечено: <span class="fw-semibold sh-kbd" id="answeredCount">0</span> / <span class="sh-kbd">{{ questions|length }}</span>
+        </div>
+      </div>
+      <div class="progress mt-2" role="progressbar" aria-label="Answered progress">
+        <div class="progress-bar" id="answeredBar" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <form method="post" class="d-grid gap-3" id="testForm">
+      {% csrf_token %}
+
+      {% for q in questions %}
+        <div class="card sh-card rounded-4">
+          <div class="card-body p-4 p-lg-4">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+              <h2 class="h6 fw-semibold mb-0">{{ forloop.counter }}. {{ q.text }}</h2>
+              <span class="badge text-bg-light border">
+                <i class="bi bi-ui-radios-grid me-1"></i> A/B/C/D
+              </span>
+            </div>
+
+            <div class="d-grid gap-2">
+              <input class="btn-check" type="radio" name="q_{{ q.id }}" id="q{{ q.id }}_A" value="A" autocomplete="off" />
+              <label class="btn btn-outline-primary text-start" for="q{{ q.id }}_A">
+                <span class="badge text-bg-primary me-2">A</span> {{ q.option_a }}
+              </label>
+
+              <input class="btn-check" type="radio" name="q_{{ q.id }}" id="q{{ q.id }}_B" value="B" autocomplete="off" />
+              <label class="btn btn-outline-primary text-start" for="q{{ q.id }}_B">
+                <span class="badge text-bg-primary me-2">B</span> {{ q.option_b }}
+              </label>
+
+              <input class="btn-check" type="radio" name="q_{{ q.id }}" id="q{{ q.id }}_C" value="C" autocomplete="off" />
+              <label class="btn btn-outline-primary text-start" for="q{{ q.id }}_C">
+                <span class="badge text-bg-primary me-2">C</span> {{ q.option_c }}
+              </label>
+
+              <input class="btn-check" type="radio" name="q_{{ q.id }}" id="q{{ q.id }}_D" value="D" autocomplete="off" />
+              <label class="btn btn-outline-primary text-start" for="q{{ q.id }}_D">
+                <span class="badge text-bg-primary me-2">D</span> {{ q.option_d }}
+              </label>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+
+      <div class="sh-glass sh-card p-3 p-lg-4 position-sticky" style="bottom: 16px">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="small sh-muted">
+            <i class="bi bi-info-circle me-1"></i> Проверь ответы и отправь тест
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-send me-2"></i> Отправить
+          </button>
+        </div>
+      </div>
+    </form>
+  {% else %}
+    <div class="alert alert-warning sh-card rounded-4">
+      В этом тесте пока нет вопросов. Добавьте их через <a href="/admin/">админку</a>.
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    (function () {
+      const form = document.getElementById("testForm");
+      if (!form) return;
+
+      const meta = document.getElementById("testMeta");
+      const total = meta ? Number(meta.dataset.total || "0") : 0;
+      const countEl = document.getElementById("answeredCount");
+      const barEl = document.getElementById("answeredBar");
+
+      function update() {
+        const names = new Set();
+        form.querySelectorAll('input[type="radio"]:checked').forEach((el) => names.add(el.name));
+        const answered = names.size;
+        const pct = total ? Math.round((answered / total) * 100) : 0;
+        if (countEl) countEl.textContent = String(answered);
+        if (barEl) barEl.style.width = pct + "%";
+      }
+
+      form.addEventListener("change", update);
+      update();
+    })();
+  </script>
+{% endblock %}
+
+

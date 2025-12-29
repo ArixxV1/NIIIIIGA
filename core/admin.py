@@ -1,0 +1,117 @@
+from django.contrib import admin
+
+from .models import (
+    AttemptAnswer,
+    Material,
+    Question,
+    Subject,
+    Test,
+    TestAttempt,
+    Topic,
+    UserProfile,
+)
+
+
+class TopicInline(admin.StackedInline):
+    model = Topic
+    extra = 0
+    fields = ('name', 'description')
+    show_change_link = True
+
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    search_fields = ('name',)
+    inlines = [TopicInline]
+
+
+class TestInline(admin.StackedInline):
+    model = Test
+    extra = 0
+    max_num = 1
+    fields = ('title',)
+    show_change_link = True
+
+
+class MaterialInline(admin.StackedInline):
+    model = Material
+    extra = 0
+    fields = ('order', 'title', 'content')
+
+
+@admin.register(Topic)
+class TopicAdmin(admin.ModelAdmin):
+    list_display = ('name', 'subject')
+    list_filter = ('subject',)
+    search_fields = ('name', 'subject__name')
+    inlines = [TestInline, MaterialInline]
+
+
+@admin.register(Material)
+class MaterialAdmin(admin.ModelAdmin):
+    list_display = ('title', 'topic', 'order')
+    list_filter = ('topic__subject', 'topic')
+    search_fields = ('title', 'topic__name', 'topic__subject__name')
+    ordering = ('topic__subject__name', 'topic__name', 'order', 'id')
+
+
+class QuestionInline(admin.StackedInline):
+    model = Question
+    extra = 0
+    fields = (
+        'text',
+        'option_a',
+        'option_b',
+        'option_c',
+        'option_d',
+        'correct_answer',
+        'explanation',
+    )
+
+
+@admin.register(Test)
+class TestAdmin(admin.ModelAdmin):
+    list_display = ('title', 'topic', 'subject_name')
+    list_filter = ('topic__subject',)
+    search_fields = ('title', 'topic__name', 'topic__subject__name')
+    inlines = [QuestionInline]
+
+    @admin.display(description='Предмет')
+    def subject_name(self, obj: Test) -> str:
+        return obj.topic.subject.name
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ('short_text', 'test', 'correct_answer')
+    list_filter = ('test__topic__subject', 'test')
+    search_fields = ('text', 'test__title')
+
+    @admin.display(description='Вопрос')
+    def short_text(self, obj: Question) -> str:
+        return obj.text[:80]
+
+
+class AttemptAnswerInline(admin.TabularInline):
+    model = AttemptAnswer
+    extra = 0
+    fields = ('question', 'selected_answer', 'is_correct')
+    readonly_fields = ('question', 'selected_answer', 'is_correct')
+    can_delete = False
+
+
+@admin.register(TestAttempt)
+class TestAttemptAdmin(admin.ModelAdmin):
+    list_display = ('user', 'test', 'percent', 'correct_count', 'total', 'created_at')
+    list_filter = ('test__topic__subject', 'test')
+    search_fields = ('user__username', 'test__title', 'test__topic__name', 'test__topic__subject__name')
+    ordering = ('-created_at',)
+    inlines = [AttemptAnswerInline]
+    readonly_fields = ('user', 'test', 'correct_count', 'total', 'percent', 'created_at')
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'display_name')
+    search_fields = ('user__username', 'display_name')

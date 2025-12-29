@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}StudyHub — Главная{% endblock %}
+
+{% block content %}
+  <div class="p-4 p-lg-5 rounded-4 sh-hero mb-4 mb-lg-5">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-8">
+        <div class="d-inline-flex align-items-center gap-2 mb-2">
+          <span class="px-3 py-2 sh-chip small">
+            <i class="bi bi-mortarboard me-1"></i> Учебная платформа
+          </span>
+          <span class="px-3 py-2 sh-chip small">
+            <i class="bi bi-lightning-charge me-1"></i> Быстрые тесты
+          </span>
+        </div>
+        <h1 class="display-5 fw-bold mb-2">
+          <span class="sh-gradient-text">StudyHub</span>
+        </h1>
+        <p class="lead mb-0 sh-muted">
+          Образовательная платформа для студентов: темы, материалы и тесты — всё в одном месте.
+        </p>
+      </div>
+      <div class="col-lg-4 text-lg-end">
+        <a class="btn btn-primary btn-lg" href="/admin/">
+          <i class="bi bi-gear-wide-connected me-2"></i> Управление контентом
+        </a>
+        <div class="small mt-2 sh-muted">
+          Создание предметов/тем/тестов доступно администратору в Django Admin
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-4">
+      <div class="col-12 col-md-4">
+        <div class="p-3 rounded-4 sh-glass sh-card">
+          <div class="small sh-muted">Предметов</div>
+          <div class="h3 fw-bold mb-0 sh-kbd">{{ stats.subjects }}</div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="p-3 rounded-4 sh-glass sh-card">
+          <div class="small sh-muted">Тем</div>
+          <div class="h3 fw-bold mb-0 sh-kbd">{{ stats.topics }}</div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="p-3 rounded-4 sh-glass sh-card">
+          <div class="small sh-muted">Тестов</div>
+          <div class="h3 fw-bold mb-0 sh-kbd">{{ stats.tests }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+    <h2 class="h4 fw-semibold mb-0 sh-section-title">Каталог предметов</h2>
+    <div class="small sh-muted">Нажмите «Перейти», чтобы открыть темы</div>
+  </div>
+
+  {% if subjects %}
+    <div class="row g-3 g-lg-4">
+      {% for subject in subjects %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="sh-glass sh-card sh-card-hover h-100 p-0">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                  <h3 class="h5 fw-semibold mb-1">{{ subject.name }}</h3>
+                  <div class="small sh-muted sh-kbd">
+                    <i class="bi bi-collection me-1"></i> Тем: {{ subject.topic_count }}
+                  </div>
+                </div>
+                <span class="px-3 py-2 sh-chip small">
+                  <i class="bi bi-book me-1"></i> Предмет
+                </span>
+              </div>
+              <div class="mt-auto pt-3">
+                <a class="btn btn-outline-primary w-100" href="{% url 'subject_detail' subject.id %}">
+                  Перейти <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info sh-card rounded-4 mb-0">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <div class="fw-semibold mb-1">Пока нет предметов</div>
+          <div class="small">Добавьте их через админку, и они появятся здесь карточками.</div>
+        </div>
+        <a class="btn btn-primary" href="/admin/">
+          <i class="bi bi-plus-circle me-2"></i> Открыть админку
+        </a>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+

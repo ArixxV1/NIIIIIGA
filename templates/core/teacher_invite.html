@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Пригласить ученика — StudyHub{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-6">
+      <div class="sh-glass sh-card p-4 p-lg-5">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <div class="d-inline-flex align-items-center gap-2 mb-2">
+              <span class="px-3 py-2 sh-chip small"><i class="bi bi-person-plus me-1"></i> Приглашение</span>
+            </div>
+            <h1 class="h3 fw-bold mb-1">Пригласить ученика</h1>
+            <div class="sh-muted">Введите имя пользователя ученика для добавления.</div>
+          </div>
+          <a class="btn btn-outline-secondary" href="{% url 'teacher_dashboard' %}">
+            <i class="bi bi-arrow-left me-1"></i> Назад
+          </a>
+        </div>
+
+        <hr class="my-4" />
+
+        <form method="post" class="d-grid gap-3">
+          {% csrf_token %}
+
+          <div>
+            <label class="form-label">Имя пользователя ученика</label>
+            <input
+              type="text"
+              name="username"
+              class="form-control form-control-lg"
+              placeholder="username"
+              required
+              autofocus
+            />
+            <div class="form-text">Введите точное имя пользователя ученика</div>
+          </div>
+
+          <button class="btn btn-primary btn-lg" type="submit">
+            <i class="bi bi-check-lg me-2"></i> Пригласить
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+

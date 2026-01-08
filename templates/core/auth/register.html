@@ -45,6 +45,12 @@
             {{ form.password2 }}
             {% if form.password2.errors %}<div class="text-danger small mt-1">{{ form.password2.errors }}</div>{% endif %}
           </div>
+          <div>
+            <label class="form-label">{{ form.role.label }}</label>
+            {{ form.role }}
+            {% if form.role.errors %}<div class="text-danger small mt-1">{{ form.role.errors }}</div>{% endif %}
+            <div class="form-text">Выберите роль: Учитель или Ученик</div>
+          </div>
 
           <button class="btn btn-primary btn-lg" type="submit">
             <i class="bi bi-stars me-2"></i> Создать аккаунт

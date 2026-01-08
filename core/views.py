@@ -1,13 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.db.models import Count, Exists, OuterRef, Max
+from django.db.models import Count, Exists, OuterRef, Max, Avg
 
 from .forms import ProfileForm, StudyHubLoginForm, StudyHubRegisterForm
-from .models import AttemptAnswer, Material, Subject, Test, TestAttempt, Topic, UserProfile
+from .models import AttemptAnswer, Material, Subject, Test, TestAttempt, Topic, UserProfile, TeacherStudent
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -97,7 +99,10 @@ def register_view(request: HttpRequest) -> HttpResponse:
     form = StudyHubRegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         user = form.save()
-        UserProfile.objects.get_or_create(user=user)
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        if created:
+            profile.role = form.cleaned_data.get('role', UserProfile.ROLE_STUDENT)
+            profile.save()
         login(request, user)
         messages.success(request, 'Аккаунт создан. Добро пожаловать в StudyHub!')
         return redirect('profile')
@@ -216,3 +221,201 @@ def test_take(request: HttpRequest, id: int) -> HttpResponse:
         )
 
     return render(request, 'core/test_take.html', {'test': test, 'questions': questions})
+
+
+@login_required
+def teacher_dashboard(request: HttpRequest) -> HttpResponse:
+    profile = get_object_or_404(UserProfile, user=request.user)
+    if not profile.is_teacher:
+        messages.error(request, 'Доступно только для учителей.')
+        return redirect('profile')
+    
+    students = TeacherStudent.objects.filter(teacher=profile).select_related('student', 'student__user')
+    student_count = students.count()
+    max_students = TeacherStudent.MAX_STUDENTS_PER_TEACHER
+    
+    # Получаем успеваемость для каждого ученика
+    students_with_performance = []
+    for ts in students:
+        student = ts.student
+        attempts = TestAttempt.objects.filter(user=student.user).select_related('test', 'test__topic', 'test__topic__subject')
+        
+        # Статистика по ученику
+        total_attempts = attempts.count()
+        avg_percent = attempts.aggregate(avg=Avg('percent'))['avg'] or 0
+        best_attempt = attempts.order_by('-percent').first()
+        
+        # Группировка по темам
+        topic_stats = (
+            attempts.values('test__topic__name', 'test__topic__subject__name')
+            .annotate(best=Max('percent'), count=Count('id'))
+            .order_by('test__topic__subject__name', 'test__topic__name')[:10]
+        )
+        
+        students_with_performance.append({
+            'teacher_student': ts,
+            'student': student,
+            'total_attempts': total_attempts,
+            'avg_percent': avg_percent,
+            'best_attempt': best_attempt,
+            'topic_stats': topic_stats,
+        })
+    
+    return render(
+        request,
+        'core/teacher_dashboard.html',
+        {
+            'profile': profile,
+            'students_with_performance': students_with_performance,
+            'student_count': student_count,
+            'max_students': max_students,
+        },
+    )
+
+
+@login_required
+def teacher_invite_student(request: HttpRequest) -> HttpResponse:
+    profile = get_object_or_404(UserProfile, user=request.user)
+    if not profile.is_teacher:
+        messages.error(request, 'Доступно только для учителей.')
+        return redirect('profile')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        if not username:
+            messages.error(request, 'Введите имя пользователя.')
+            return redirect('teacher_invite')
+        
+        try:
+            student_user = User.objects.get(username=username)
+            student_profile = get_object_or_404(UserProfile, user=student_user)
+            
+            if not student_profile.is_student:
+                messages.error(request, f'Пользователь {username} не является учеником.')
+                return redirect('teacher_invite')
+            
+            # Проверка лимита
+            current_count = TeacherStudent.objects.filter(teacher=profile).count()
+            if current_count >= TeacherStudent.MAX_STUDENTS_PER_TEACHER:
+                messages.error(request, f'Достигнут лимит учеников ({TeacherStudent.MAX_STUDENTS_PER_TEACHER}).')
+                return redirect('teacher_dashboard')
+            
+            # Проверка существующей связи
+            if TeacherStudent.objects.filter(teacher=profile, student=student_profile).exists():
+                messages.warning(request, f'Ученик {username} уже добавлен.')
+                return redirect('teacher_dashboard')
+            
+            # Создание связи
+            TeacherStudent.objects.create(teacher=profile, student=student_profile)
+            messages.success(request, f'Ученик {username} успешно добавлен.')
+            return redirect('teacher_dashboard')
+            
+        except User.DoesNotExist:
+            messages.error(request, f'Пользователь {username} не найден.')
+            return redirect('teacher_invite')
+        except ValidationError as e:
+            messages.error(request, str(e))
+            return redirect('teacher_invite')
+    
+    return render(request, 'core/teacher_invite.html', {'profile': profile})
+
+
+@login_required
+def teacher_remove_student(request: HttpRequest, id: int) -> HttpResponse:
+    profile = get_object_or_404(UserProfile, user=request.user)
+    if not profile.is_teacher:
+        messages.error(request, 'Доступно только для учителей.')
+        return redirect('profile')
+    
+    teacher_student = get_object_or_404(TeacherStudent, pk=id, teacher=profile)
+    student_username = teacher_student.student.user.username
+    teacher_student.delete()
+    messages.success(request, f'Ученик {student_username} удалён из вашего списка.')
+    return redirect('teacher_dashboard')
+
+
+@login_required
+def student_select_teacher(request: HttpRequest) -> HttpResponse:
+    profile = get_object_or_404(UserProfile, user=request.user)
+    if not profile.is_student:
+        messages.error(request, 'Доступно только для учеников.')
+        return redirect('profile')
+    
+    # Получаем текущих учителей
+    current_teachers = TeacherStudent.objects.filter(student=profile).select_related('teacher', 'teacher__user')
+    current_teacher_ids = set(ts.teacher_id for ts in current_teachers)
+    
+    # Поиск учителей
+    search_query = request.GET.get('search', '').strip()
+    teachers = UserProfile.objects.filter(role=UserProfile.ROLE_TEACHER).select_related('user')
+    
+    if search_query:
+        teachers = teachers.filter(
+            user__username__icontains=search_query
+        ) | teachers.filter(
+            display_name__icontains=search_query
+        )
+    
+    # Исключаем уже выбранных учителей
+    teachers = teachers.exclude(id__in=current_teacher_ids)
+    
+    # Добавляем количество учеников для каждого учителя
+    teachers_with_count = []
+    for teacher in teachers:
+        student_count = TeacherStudent.objects.filter(teacher=teacher).count()
+        teachers_with_count.append({
+            'teacher': teacher,
+            'student_count': student_count,
+            'can_add': student_count < TeacherStudent.MAX_STUDENTS_PER_TEACHER,
+        })
+    
+    if request.method == 'POST':
+        teacher_id = request.POST.get('teacher_id')
+        if teacher_id:
+            try:
+                teacher_profile = get_object_or_404(UserProfile, pk=teacher_id, role=UserProfile.ROLE_TEACHER)
+                
+                # Проверка лимита учителя
+                current_count = TeacherStudent.objects.filter(teacher=teacher_profile).count()
+                if current_count >= TeacherStudent.MAX_STUDENTS_PER_TEACHER:
+                    messages.error(request, f'Учитель {teacher_profile.user.username} достиг лимита учеников.')
+                    return redirect('student_select_teacher')
+                
+                # Проверка существующей связи
+                if TeacherStudent.objects.filter(teacher=teacher_profile, student=profile).exists():
+                    messages.warning(request, 'Вы уже выбрали этого учителя.')
+                    return redirect('student_select_teacher')
+                
+                # Создание связи
+                TeacherStudent.objects.create(teacher=teacher_profile, student=profile)
+                messages.success(request, f'Учитель {teacher_profile.user.username} добавлен.')
+                return redirect('student_select_teacher')
+                
+            except ValidationError as e:
+                messages.error(request, str(e))
+                return redirect('student_select_teacher')
+    
+    return render(
+        request,
+        'core/student_select_teacher.html',
+        {
+            'profile': profile,
+            'current_teachers': current_teachers,
+            'teachers_with_count': teachers_with_count,
+            'search_query': search_query,
+        },
+    )
+
+
+@login_required
+def student_leave_teacher(request: HttpRequest, id: int) -> HttpResponse:
+    profile = get_object_or_404(UserProfile, user=request.user)
+    if not profile.is_student:
+        messages.error(request, 'Доступно только для учеников.')
+        return redirect('profile')
+    
+    teacher_student = get_object_or_404(TeacherStudent, pk=id, student=profile)
+    teacher_username = teacher_student.teacher.user.username
+    teacher_student.delete()
+    messages.success(request, f'Вы покинули учителя {teacher_username}.')
+    return redirect('student_select_teacher')

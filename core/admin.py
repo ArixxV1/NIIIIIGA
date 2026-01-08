@@ -5,6 +5,7 @@ from .models import (
     Material,
     Question,
     Subject,
+    TeacherStudent,
     Test,
     TestAttempt,
     Topic,
@@ -113,5 +114,15 @@ class TestAttemptAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'display_name')
+    list_display = ('user', 'display_name', 'role')
+    list_filter = ('role',)
     search_fields = ('user__username', 'display_name')
+
+
+@admin.register(TeacherStudent)
+class TeacherStudentAdmin(admin.ModelAdmin):
+    list_display = ('teacher', 'student', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('teacher__user__username', 'student__user__username', 'teacher__display_name', 'student__display_name')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'

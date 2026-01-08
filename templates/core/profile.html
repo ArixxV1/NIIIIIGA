@@ -7,16 +7,36 @@
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
       <div>
         <div class="d-inline-flex align-items-center gap-2 mb-2">
-          <span class="px-3 py-2 sh-chip small"><i class="bi bi-person-circle me-1"></i> Личный кабинет</span>
+          <span class="px-3 py-2 sh-chip small">
+            <i class="bi bi-person-circle me-1"></i> 
+            {% if profile.is_teacher %}Учитель{% elif profile.is_student %}Ученик{% else %}Личный кабинет{% endif %}
+          </span>
         </div>
         <h1 class="h3 fw-bold mb-1">Привет, {{ user.username }}!</h1>
         <div class="sh-muted">
-          Здесь ваш прогресс и последние попытки тестов.
+          {% if profile.is_teacher %}
+            Здесь ваш прогресс и управление учениками.
+          {% elif profile.is_student %}
+            Здесь ваш прогресс и последние попытки тестов.
+          {% else %}
+            Здесь ваш прогресс и последние попытки тестов.
+          {% endif %}
         </div>
       </div>
-      <a class="btn btn-outline-secondary" href="{% url 'home' %}">
-        <i class="bi bi-arrow-left me-1"></i> К предметам
-      </a>
+      <div class="d-flex gap-2">
+        {% if profile.is_teacher %}
+          <a class="btn btn-primary" href="{% url 'teacher_dashboard' %}">
+            <i class="bi bi-people me-1"></i> Панель учителя
+          </a>
+        {% elif profile.is_student %}
+          <a class="btn btn-primary" href="{% url 'student_select_teacher' %}">
+            <i class="bi bi-person-check me-1"></i> Выбор учителей
+          </a>
+        {% endif %}
+        <a class="btn btn-outline-secondary" href="{% url 'home' %}">
+          <i class="bi bi-arrow-left me-1"></i> К предметам
+        </a>
+      </div>
     </div>
 
     <hr class="my-4" />
@@ -47,7 +67,13 @@
         <div class="p-3 rounded-4 border bg-white h-100">
           <div class="fw-semibold mb-2">Подсказка</div>
           <div class="small sh-muted">
-            Пройдите тесты по темам — результаты автоматически сохраняются и отображаются ниже.
+            {% if profile.is_teacher %}
+              Используйте панель учителя для управления учениками и отслеживания их успеваемости.
+            {% elif profile.is_student %}
+              Пройдите тесты по темам — результаты автоматически сохраняются и отображаются ниже. Выберите учителей для отслеживания вашего прогресса.
+            {% else %}
+              Пройдите тесты по темам — результаты автоматически сохраняются и отображаются ниже.
+            {% endif %}
           </div>
         </div>
       </div>

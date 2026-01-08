@@ -14,6 +14,13 @@ urlpatterns = [
     path('accounts/register/', views.register_view, name='register'),
     path('accounts/logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
+    # Teacher routes
+    path('teacher/dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
+    path('teacher/invite/', views.teacher_invite_student, name='teacher_invite'),
+    path('teacher/remove-student/<int:id>/', views.teacher_remove_student, name='teacher_remove_student'),
+    # Student routes
+    path('student/select-teacher/', views.student_select_teacher, name='student_select_teacher'),
+    path('student/leave-teacher/<int:id>/', views.student_leave_teacher, name='student_leave_teacher'),
 ]
 
 

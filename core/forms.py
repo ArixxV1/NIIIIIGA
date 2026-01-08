@@ -29,6 +29,12 @@ class StudyHubRegisterForm(UserCreationForm):
         label='Повтор пароля',
         widget=forms.PasswordInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Повторите пароль'}),
     )
+    role = forms.ChoiceField(
+        label='Роль',
+        choices=UserProfile.ROLE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control form-control-lg'}),
+        initial=UserProfile.ROLE_STUDENT,
+    )
 
     class Meta(UserCreationForm.Meta):
         model = User

@@ -123,9 +123,18 @@ class AttemptAnswer(models.Model):
 
 
 class UserProfile(models.Model):
+    ROLE_TEACHER = 'teacher'
+    ROLE_STUDENT = 'student'
+    
+    ROLE_CHOICES = [
+        (ROLE_TEACHER, 'Учитель'),
+        (ROLE_STUDENT, 'Ученик'),
+    ]
+    
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     display_name = models.CharField(max_length=80, blank=True)
     bio = models.TextField(blank=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_STUDENT, verbose_name='Роль')
 
     class Meta:
         verbose_name = 'Профиль'
@@ -133,3 +142,60 @@ class UserProfile(models.Model):
 
     def __str__(self) -> str:
         return self.display_name or str(self.user)
+    
+    @property
+    def is_teacher(self) -> bool:
+        return self.role == self.ROLE_TEACHER
+    
+    @property
+    def is_student(self) -> bool:
+        return self.role == self.ROLE_STUDENT
+
+
+class TeacherStudent(models.Model):
+    MAX_STUDENTS_PER_TEACHER = 30
+    
+    teacher = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name='students',
+        limit_choices_to={'role': UserProfile.ROLE_TEACHER},
+        verbose_name='Учитель'
+    )
+    student = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name='teachers',
+        limit_choices_to={'role': UserProfile.ROLE_STUDENT},
+        verbose_name='Ученик'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
+
+    class Meta:
+        unique_together = [('teacher', 'student')]
+        verbose_name = 'Связь учитель-ученик'
+        verbose_name_plural = 'Связи учитель-ученик'
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f'{self.teacher} — {self.student}'
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.teacher_id and self.student_id:
+            if self.teacher_id == self.student_id:
+                raise ValidationError('Учитель не может быть своим учеником.')
+            if self.teacher.role != UserProfile.ROLE_TEACHER:
+                raise ValidationError('Учитель должен иметь роль "Учитель".')
+            if self.student.role != UserProfile.ROLE_STUDENT:
+                raise ValidationError('Ученик должен иметь роль "Ученик".')
+            
+            # Проверка лимита учеников (только при создании новой связи)
+            if not self.pk:
+                existing_count = TeacherStudent.objects.filter(teacher=self.teacher).count()
+                if existing_count >= self.MAX_STUDENTS_PER_TEACHER:
+                    raise ValidationError(f'Учитель может иметь максимум {self.MAX_STUDENTS_PER_TEACHER} учеников.')
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

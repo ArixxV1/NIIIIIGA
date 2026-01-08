@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Панель учителя — StudyHub{% endblock %}
+
+{% block content %}
+  <div class="sh-glass sh-card p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <div class="d-inline-flex align-items-center gap-2 mb-2">
+          <span class="px-3 py-2 sh-chip small"><i class="bi bi-person-badge me-1"></i> Учитель</span>
+        </div>
+        <h1 class="h3 fw-bold mb-1">Панель управления учениками</h1>
+        <div class="sh-muted">
+          Управляйте своими учениками и отслеживайте их успеваемость.
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-primary" href="{% url 'teacher_invite' %}">
+          <i class="bi bi-person-plus me-2"></i> Пригласить ученика
+        </a>
+        <a class="btn btn-outline-secondary" href="{% url 'profile' %}">
+          <i class="bi bi-arrow-left me-1"></i> Профиль
+        </a>
+      </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="alert alert-info sh-glass sh-card mb-0">
+      <i class="bi bi-info-circle me-2"></i>
+      Учеников: <strong>{{ student_count }}/{{ max_students }}</strong>
+      {% if student_count >= max_students %}
+        <span class="text-danger">(Лимит достигнут)</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if students_with_performance %}
+    <div class="row g-3 g-lg-4">
+      {% for item in students_with_performance %}
+        <div class="col-12 col-lg-6">
+          <div class="sh-glass sh-card p-4">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+              <div>
+                <h3 class="h5 fw-semibold mb-1">{{ item.student.display_name|default:item.student.user.username }}</h3>
+                <div class="small sh-muted">@{{ item.student.user.username }}</div>
+              </div>
+              <form method="post" action="{% url 'teacher_remove_student' item.teacher_student.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить ученика?')">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </form>
+            </div>
+
+            <div class="d-grid gap-2 mb-3">
+              <div class="p-3 rounded-4 border bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="small sh-muted">Всего попыток</div>
+                  <div class="fw-bold sh-kbd">{{ item.total_attempts }}</div>
+                </div>
+              </div>
+              <div class="p-3 rounded-4 border bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="small sh-muted">Средний результат</div>
+                  <div class="fw-bold sh-kbd">{{ item.avg_percent|floatformat:0 }}%</div>
+                </div>
+              </div>
+              {% if item.best_attempt %}
+                <div class="p-3 rounded-4 border bg-white">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="small sh-muted">Лучший результат</div>
+                    <div class="fw-bold sh-kbd">{{ item.best_attempt.percent|floatformat:0 }}%</div>
+                  </div>
+                  <div class="small sh-muted">{{ item.best_attempt.test.topic.subject.name }} · {{ item.best_attempt.test.topic.name }}</div>
+                </div>
+              {% endif %}
+            </div>
+
+            {% if item.topic_stats %}
+              <div>
+                <div class="fw-semibold mb-2 small">Прогресс по темам</div>
+                <div class="d-grid gap-2">
+                  {% for stat in item.topic_stats %}
+                    <div class="p-2 rounded-4 border bg-white">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="small fw-semibold">{{ stat.test__topic__name }}</div>
+                          <div class="small sh-muted">{{ stat.test__topic__subject__name }}</div>
+                        </div>
+                        <div class="text-end">
+                          <div class="fw-bold sh-kbd small">{{ stat.best|floatformat:0 }}%</div>
+                          <div class="small sh-muted sh-kbd">{{ stat.count }} попыт.</div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% else %}
+              <div class="alert alert-info sh-glass sh-card mb-0">
+                <div class="small">Пока нет попыток тестов.</div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="sh-glass sh-card p-4 p-lg-5 text-center">
+      <i class="bi bi-people fs-1 text-muted mb-3"></i>
+      <h3 class="h5 fw-semibold mb-2">Нет учеников</h3>
+      <div class="sh-muted mb-3">Пригласите учеников, чтобы начать отслеживать их успеваемость.</div>
+      <a class="btn btn-primary" href="{% url 'teacher_invite' %}">
+        <i class="bi bi-person-plus me-2"></i> Пригласить первого ученика
+      </a>
+    </div>
+  {% endif %}
+{% endblock %}
+

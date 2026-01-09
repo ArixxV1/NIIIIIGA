@@ -70,7 +70,7 @@ class NoteForm(forms.ModelForm):
     )
     subject = forms.ModelChoiceField(
         label='Предмет',
-        queryset=Subject.objects.all(),
+        queryset=Subject.objects.none(),  # Будет установлен в __init__
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'}),
         empty_label='Выберите предмет (необязательно)',
@@ -88,13 +88,25 @@ class NoteForm(forms.ModelForm):
         fields = ('title', 'content', 'subject', 'topic')
 
     def __init__(self, *args, **kwargs):
+        request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
-        if 'subject' in self.data:
+        
+        # Всегда загружаем все предметы
+        self.fields['subject'].queryset = Subject.objects.all().order_by('name')
+        
+        # Обрабатываем как POST данные, так и GET параметры
+        subject_id = None
+        if self.data:
+            subject_id = self.data.get('subject')
+        elif request and request.method == 'GET':
+            subject_id = request.GET.get('subject')
+        
+        if subject_id:
             try:
-                subject_id = int(self.data.get('subject'))
+                subject_id = int(subject_id)
                 self.fields['topic'].queryset = Topic.objects.filter(subject_id=subject_id).order_by('name')
             except (ValueError, TypeError):
-                pass
+                self.fields['topic'].queryset = Topic.objects.none()
         elif self.instance.pk:
             if self.instance.subject:
                 self.fields['topic'].queryset = Topic.objects.filter(subject=self.instance.subject).order_by('name')

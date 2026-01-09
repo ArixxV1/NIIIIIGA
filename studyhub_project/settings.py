@@ -118,6 +118,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Auth redirects
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/profile/'

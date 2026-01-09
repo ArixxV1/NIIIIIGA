@@ -3,6 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>{% block title %}StudyHub{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -87,6 +90,18 @@
         transform: translateY(-3px);
         border-color: rgba(13, 110, 253, 0.22);
         box-shadow: 0 26px 80px rgba(2, 6, 23, 0.14);
+      }
+      .subject-image-wrapper {
+        overflow: hidden;
+      }
+      .subject-image-wrapper img {
+        transition: transform 0.3s ease;
+      }
+      .sh-card-hover:hover .subject-image-wrapper img {
+        transform: scale(1.1);
+      }
+      .object-fit-cover {
+        object-fit: cover;
       }
 
       .sh-hero {

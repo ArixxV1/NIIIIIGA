@@ -23,9 +23,18 @@ class TopicInline(admin.StackedInline):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    search_fields = ('name',)
+    list_display = ('name', 'description_short', 'topic_count')
+    search_fields = ('name', 'description')
+    fields = ('name', 'image', 'description')
     inlines = [TopicInline]
+    
+    def description_short(self, obj):
+        return obj.description[:50] + '...' if obj.description and len(obj.description) > 50 else obj.description or '-'
+    description_short.short_description = 'Описание'
+    
+    def topic_count(self, obj):
+        return obj.topics.count()
+    topic_count.short_description = 'Тем'
 
 
 class TestInline(admin.StackedInline):

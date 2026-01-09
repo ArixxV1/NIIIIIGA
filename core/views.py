@@ -461,7 +461,7 @@ def notes_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def note_create(request: HttpRequest) -> HttpResponse:
-    form = NoteForm(request.POST or None)
+    form = NoteForm(request.POST or None, request=request)
     if request.method == 'POST':
         if form.is_valid():
             note = form.save(commit=False)
@@ -490,7 +490,7 @@ def note_detail(request: HttpRequest, id: int) -> HttpResponse:
 @login_required
 def note_edit(request: HttpRequest, id: int) -> HttpResponse:
     note = get_object_or_404(Note, pk=id, user=request.user)
-    form = NoteForm(request.POST or None, instance=note)
+    form = NoteForm(request.POST or None, instance=note, request=request)
     
     if request.method == 'POST':
         if form.is_valid():
@@ -518,3 +518,17 @@ def my_notes(request: HttpRequest) -> HttpResponse:
     notes = Note.objects.filter(user=request.user).select_related('subject', 'topic').order_by('-created_at')
     
     return render(request, 'core/notes/my_notes.html', {'notes': notes})
+
+
+def load_topics(request: HttpRequest) -> HttpResponse:
+    """AJAX endpoint для загрузки тем по предмету"""
+    from django.http import JsonResponse
+    subject_id = request.GET.get('subject_id')
+    if subject_id:
+        try:
+            topics = Topic.objects.filter(subject_id=subject_id).order_by('name')
+            topics_data = [{'id': topic.id, 'name': topic.name} for topic in topics]
+            return JsonResponse({'topics': topics_data})
+        except (ValueError, TypeError):
+            return JsonResponse({'topics': []})
+    return JsonResponse({'topics': []})

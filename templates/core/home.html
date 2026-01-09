@@ -59,25 +59,34 @@
   </div>
 
   {% if subjects %}
-    <div class="row g-3 g-lg-4">
+    <div class="row g-4">
       {% for subject in subjects %}
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="sh-glass sh-card sh-card-hover h-100 p-0">
-            <div class="card-body d-flex flex-column">
-              <div class="d-flex align-items-start justify-content-between gap-3">
-                <div>
-                  <h3 class="h5 fw-semibold mb-1">{{ subject.name }}</h3>
-                  <div class="small sh-muted sh-kbd">
-                    <i class="bi bi-collection me-1"></i> Тем: {{ subject.topic_count }}
-                  </div>
-                </div>
-                <span class="px-3 py-2 sh-chip small">
-                  <i class="bi bi-book me-1"></i> Предмет
-                </span>
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+          <div class="sh-glass sh-card sh-card-hover h-100 p-0 overflow-hidden position-relative d-flex flex-column">
+            {% if subject.image %}
+              <div class="subject-image-wrapper" style="height: 180px; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <img src="{{ subject.image.url }}" alt="{{ subject.name }}" class="w-100 h-100 object-fit-cover">
               </div>
-              <div class="mt-auto pt-3">
-                <a class="btn btn-outline-primary w-100" href="{% url 'subject_detail' subject.id %}">
-                  Перейти <i class="bi bi-arrow-right ms-1"></i>
+            {% else %}
+              <div class="subject-image-wrapper d-flex align-items-center justify-content-center" style="height: 180px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="bi bi-book text-white" style="font-size: 4rem; opacity: 0.3;"></i>
+              </div>
+            {% endif %}
+            <div class="d-flex flex-column flex-grow-1 p-4">
+              <div class="mb-3">
+                <h3 class="h5 fw-bold mb-2">{{ subject.name }}</h3>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="badge bg-primary">
+                    <i class="bi bi-collection me-1"></i> {{ subject.topic_count }} тем
+                  </span>
+                </div>
+                {% if subject.description %}
+                  <p class="small text-muted mb-0" style="line-height: 1.4;">{{ subject.description|truncatewords:15 }}</p>
+                {% endif %}
+              </div>
+              <div class="mt-auto">
+                <a class="btn btn-primary w-100" href="{% url 'subject_detail' subject.id %}">
+                  <i class="bi bi-arrow-right me-1"></i> Открыть
                 </a>
               </div>
             </div>

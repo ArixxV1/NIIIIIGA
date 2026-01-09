@@ -3,7 +3,9 @@ from django.db import models
 
 
 class Subject(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, verbose_name='Название')
+    image = models.ImageField(upload_to='subjects/', blank=True, null=True, verbose_name='Изображение')
+    description = models.TextField(blank=True, verbose_name='Описание')
 
     class Meta:
         ordering = ['name']

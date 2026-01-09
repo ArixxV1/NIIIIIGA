@@ -76,30 +76,62 @@
 
 {% block extra_js %}
 <script>
-  // Динамическая загрузка тем при выборе предмета
+  // Динамическая загрузка тем при выборе предмета через AJAX
   document.addEventListener('DOMContentLoaded', function() {
     const subjectSelect = document.querySelector('#id_subject');
     const topicSelect = document.querySelector('#id_topic');
     
     if (subjectSelect && topicSelect) {
+      // Сохраняем исходный empty_label
+      const emptyLabel = topicSelect.options[0] ? topicSelect.options[0].text : 'Выберите тему (необязательно)';
+      
       subjectSelect.addEventListener('change', function() {
         const subjectId = this.value;
+        
+        // Очищаем список тем
+        topicSelect.innerHTML = '<option value="">' + emptyLabel + '</option>';
+        
         if (subjectId) {
-          // Загружаем темы через AJAX или перезагружаем страницу
-          const form = document.createElement('form');
-          form.method = 'GET';
-          form.action = window.location.pathname;
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = 'subject';
-          input.value = subjectId;
-          form.appendChild(input);
-          document.body.appendChild(form);
-          form.submit();
+          // Показываем индикатор загрузки
+          topicSelect.disabled = true;
+          const loadingOption = document.createElement('option');
+          loadingOption.text = 'Загрузка...';
+          loadingOption.value = '';
+          topicSelect.appendChild(loadingOption);
+          
+          // Загружаем темы через AJAX
+          fetch('{% url "load_topics" %}?subject_id=' + subjectId)
+            .then(response => response.json())
+            .then(data => {
+              // Очищаем список тем
+              topicSelect.innerHTML = '<option value="">' + emptyLabel + '</option>';
+              
+              // Добавляем загруженные темы
+              if (data.topics && data.topics.length > 0) {
+                data.topics.forEach(function(topic) {
+                  const option = document.createElement('option');
+                  option.value = topic.id;
+                  option.text = topic.name;
+                  topicSelect.appendChild(option);
+                });
+              }
+              
+              topicSelect.disabled = false;
+            })
+            .catch(error => {
+              console.error('Ошибка загрузки тем:', error);
+              topicSelect.innerHTML = '<option value="">' + emptyLabel + '</option>';
+              topicSelect.disabled = false;
+            });
         } else {
-          topicSelect.innerHTML = '<option value="">Выберите тему (необязательно)</option>';
+          topicSelect.disabled = false;
         }
       });
+      
+      // Если предмет уже выбран (при загрузке страницы с GET параметром), загружаем темы
+      if (subjectSelect.value) {
+        subjectSelect.dispatchEvent(new Event('change'));
+      }
     }
   });
 </script>

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Конспекты — StudyHub{% endblock %}
+
+{% block content %}
+  <div class="sh-glass sh-card p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <div class="d-inline-flex align-items-center gap-2 mb-2">
+          <span class="px-3 py-2 sh-chip small"><i class="bi bi-journal-text me-1"></i> Конспекты</span>
+        </div>
+        <h1 class="h3 fw-bold mb-1">Все конспекты</h1>
+        <div class="sh-muted">Просматривайте и изучайте конспекты по различным предметам и темам.</div>
+      </div>
+      <div class="d-flex gap-2">
+        {% if user.is_authenticated %}
+          <a class="btn btn-primary" href="{% url 'note_create' %}">
+            <i class="bi bi-plus-lg me-2"></i> Создать конспект
+          </a>
+          <a class="btn btn-outline-primary" href="{% url 'my_notes' %}">
+            <i class="bi bi-person me-2"></i> Мои конспекты
+          </a>
+        {% endif %}
+        <a class="btn btn-outline-secondary" href="{% url 'home' %}">
+          <i class="bi bi-arrow-left me-1"></i> Главная
+        </a>
+      </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <form method="get" class="row g-3">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Предмет</label>
+        <select name="subject" class="form-select">
+          <option value="">Все предметы</option>
+          {% for s in subjects %}
+            <option value="{{ s.id }}" {% if selected_subject == s.id %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label">Тема</label>
+        <select name="topic" class="form-select">
+          <option value="">Все темы</option>
+          {% for t in topics %}
+            <option value="{{ t.id }}" {% if selected_topic == t.id %}selected{% endif %}>{{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-funnel me-1"></i> Фильтровать
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {% if notes %}
+    <div class="row g-3">
+      {% for note in notes %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="sh-glass sh-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <h3 class="h5 fw-semibold mb-0">
+                <a href="{% url 'note_detail' note.id %}" class="text-decoration-none">{{ note.title }}</a>
+              </h3>
+            </div>
+            <div class="small sh-muted mb-3">
+              {{ note.content|truncatewords:20 }}
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              {% if note.subject %}
+                <span class="badge bg-primary">{{ note.subject.name }}</span>
+              {% endif %}
+              {% if note.topic %}
+                <span class="badge bg-secondary">{{ note.topic.name }}</span>
+              {% endif %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="small sh-muted">
+                <i class="bi bi-person me-1"></i>{{ note.user.username }}
+              </div>
+              <div class="small sh-muted">
+                <i class="bi bi-calendar me-1"></i>{{ note.created_at|date:"d.m.Y" }}
+              </div>
+            </div>
+            <div class="mt-3">
+              <a href="{% url 'note_detail' note.id %}" class="btn btn-sm btn-outline-primary w-100">
+                <i class="bi bi-eye me-1"></i> Читать
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="sh-glass sh-card p-4 p-lg-5 text-center">
+      <i class="bi bi-journal-x fs-1 text-muted mb-3"></i>
+      <h3 class="h5 fw-semibold mb-2">Конспекты не найдены</h3>
+      <div class="sh-muted mb-3">Попробуйте изменить фильтры или создайте первый конспект.</div>
+      {% if user.is_authenticated %}
+        <a class="btn btn-primary" href="{% url 'note_create' %}">
+          <i class="bi bi-plus-lg me-2"></i> Создать конспект
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}
+

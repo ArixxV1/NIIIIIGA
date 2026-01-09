@@ -21,6 +21,13 @@ urlpatterns = [
     # Student routes
     path('student/select-teacher/', views.student_select_teacher, name='student_select_teacher'),
     path('student/leave-teacher/<int:id>/', views.student_leave_teacher, name='student_leave_teacher'),
+    # Notes routes
+    path('notes/', views.notes_list, name='notes_list'),
+    path('notes/create/', views.note_create, name='note_create'),
+    path('notes/<int:id>/', views.note_detail, name='note_detail'),
+    path('notes/<int:id>/edit/', views.note_edit, name='note_edit'),
+    path('notes/<int:id>/delete/', views.note_delete, name='note_delete'),
+    path('notes/my/', views.my_notes, name='my_notes'),
 ]
 
 

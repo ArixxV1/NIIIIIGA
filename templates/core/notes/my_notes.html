@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Мои конспекты — StudyHub{% endblock %}
+
+{% block content %}
+  <div class="sh-glass sh-card p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <div class="d-inline-flex align-items-center gap-2 mb-2">
+          <span class="px-3 py-2 sh-chip small"><i class="bi bi-person me-1"></i> Мои конспекты</span>
+        </div>
+        <h1 class="h3 fw-bold mb-1">Мои конспекты</h1>
+        <div class="sh-muted">Управляйте своими конспектами.</div>
+      </div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-primary" href="{% url 'note_create' %}">
+          <i class="bi bi-plus-lg me-2"></i> Создать конспект
+        </a>
+        <a class="btn btn-outline-secondary" href="{% url 'notes_list' %}">
+          <i class="bi bi-arrow-left me-1"></i> Все конспекты
+        </a>
+      </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="alert alert-info sh-glass sh-card mb-0">
+      <i class="bi bi-info-circle me-2"></i>Всего конспектов: <strong>{{ notes|length }}</strong>
+    </div>
+  </div>
+
+  {% if notes %}
+    <div class="row g-3">
+      {% for note in notes %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="sh-glass sh-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <h3 class="h5 fw-semibold mb-0">
+                <a href="{% url 'note_detail' note.id %}" class="text-decoration-none">{{ note.title }}</a>
+              </h3>
+            </div>
+            <div class="small sh-muted mb-3">
+              {{ note.content|truncatewords:20 }}
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              {% if note.subject %}
+                <span class="badge bg-primary">{{ note.subject.name }}</span>
+              {% endif %}
+              {% if note.topic %}
+                <span class="badge bg-secondary">{{ note.topic.name }}</span>
+              {% endif %}
+            </div>
+            <div class="small sh-muted mb-3">
+              <i class="bi bi-calendar me-1"></i>{{ note.created_at|date:"d.m.Y H:i" }}
+              {% if note.updated_at != note.created_at %}
+                · Обновлен: {{ note.updated_at|date:"d.m.Y H:i" }}
+              {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+              <a href="{% url 'note_detail' note.id %}" class="btn btn-sm btn-outline-primary flex-fill">
+                <i class="bi bi-eye me-1"></i> Просмотр
+              </a>
+              <a href="{% url 'note_edit' note.id %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'note_delete' note.id %}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="sh-glass sh-card p-4 p-lg-5 text-center">
+      <i class="bi bi-journal-x fs-1 text-muted mb-3"></i>
+      <h3 class="h5 fw-semibold mb-2">У вас пока нет конспектов</h3>
+      <div class="sh-muted mb-3">Создайте свой первый конспект, чтобы начать.</div>
+      <a class="btn btn-primary" href="{% url 'note_create' %}">
+        <i class="bi bi-plus-lg me-2"></i> Создать конспект
+      </a>
+    </div>
+  {% endif %}
+{% endblock %}
+

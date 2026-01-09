@@ -1,8 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
-from .models import UserProfile
+from .models import Note, Subject, Topic, UserProfile
 
 
 class StudyHubLoginForm(AuthenticationForm):
@@ -56,5 +57,63 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
         fields = ('display_name', 'bio')
+
+
+class NoteForm(forms.ModelForm):
+    title = forms.CharField(
+        label='Заголовок',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Введите заголовок конспекта'}),
+    )
+    content = forms.CharField(
+        label='Содержимое',
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 15, 'placeholder': 'Введите содержимое конспекта...'}),
+    )
+    subject = forms.ModelChoiceField(
+        label='Предмет',
+        queryset=Subject.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label='Выберите предмет (необязательно)',
+    )
+    topic = forms.ModelChoiceField(
+        label='Тема',
+        queryset=Topic.objects.none(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        empty_label='Выберите тему (необязательно)',
+    )
+
+    class Meta:
+        model = Note
+        fields = ('title', 'content', 'subject', 'topic')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'subject' in self.data:
+            try:
+                subject_id = int(self.data.get('subject'))
+                self.fields['topic'].queryset = Topic.objects.filter(subject_id=subject_id).order_by('name')
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
+            if self.instance.subject:
+                self.fields['topic'].queryset = Topic.objects.filter(subject=self.instance.subject).order_by('name')
+            else:
+                self.fields['topic'].queryset = Topic.objects.none()
+        else:
+            self.fields['topic'].queryset = Topic.objects.none()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        subject = cleaned_data.get('subject')
+        topic = cleaned_data.get('topic')
+        
+        if not subject and not topic:
+            raise ValidationError('Необходимо указать хотя бы предмет или тему.')
+        
+        if topic and subject and topic.subject != subject:
+            raise ValidationError('Выбранная тема не относится к выбранному предмету.')
+        
+        return cleaned_data
 
 

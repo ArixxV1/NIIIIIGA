@@ -199,3 +199,30 @@ class TeacherStudent(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class Note(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notes', verbose_name='Автор')
+    title = models.CharField(max_length=200, verbose_name='Заголовок')
+    content = models.TextField(verbose_name='Содержимое')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='notes', null=True, blank=True, verbose_name='Предмет')
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='notes', null=True, blank=True, verbose_name='Тема')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлен')
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Конспект'
+        verbose_name_plural = 'Конспекты'
+
+    def __str__(self) -> str:
+        return f'{self.title} ({self.user.username})'
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if not self.subject_id and not self.topic_id:
+            raise ValidationError('Необходимо указать хотя бы предмет или тему.')
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

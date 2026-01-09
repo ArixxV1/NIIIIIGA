@@ -27,18 +27,21 @@
           type="text"
           name="search"
           class="form-control"
-          placeholder="Поиск по имени пользователя или отображаемому имени..."
+          placeholder="Поиск по имени пользователя или отображаемому имени (оставьте пустым для всех учителей)..."
           value="{{ search_query }}"
         />
         <button class="btn btn-primary" type="submit">
           <i class="bi bi-search me-1"></i> Найти
         </button>
         {% if search_query %}
-          <a class="btn btn-outline-secondary" href="{% url 'student_select_teacher' %}">
+          <a class="btn btn-outline-secondary" href="{% url 'student_select_teacher' %}" title="Показать всех учителей">
             <i class="bi bi-x-lg"></i>
           </a>
         {% endif %}
       </form>
+      <div class="form-text mt-2">
+        <i class="bi bi-lightbulb me-1"></i>Оставьте поле поиска пустым и нажмите "Найти", чтобы увидеть всех доступных учителей.
+      </div>
     </div>
   </div>
 
@@ -117,9 +120,9 @@
     {% else %}
       <div class="alert alert-info sh-glass sh-card mb-0">
         {% if search_query %}
-          Учителя не найдены. Попробуйте другой запрос.
+          <i class="bi bi-info-circle me-2"></i>Учителя не найдены по запросу "{{ search_query }}". Попробуйте другой запрос или оставьте поле пустым, чтобы увидеть всех учителей.
         {% else %}
-          Нет доступных учителей. Используйте поиск для поиска учителей.
+          <i class="bi bi-info-circle me-2"></i>Нет доступных учителей. Введите имя пользователя в поле поиска выше, чтобы найти учителя, или оставьте поле пустым для просмотра всех учителей.
         {% endif %}
       </div>
     {% endif %}

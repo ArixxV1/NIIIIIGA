@@ -8,8 +8,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.db.models import Count, Exists, OuterRef, Max, Avg
 
-from .forms import ProfileForm, StudyHubLoginForm, StudyHubRegisterForm
-from .models import AttemptAnswer, Material, Subject, Test, TestAttempt, Topic, UserProfile, TeacherStudent
+from .forms import NoteForm, ProfileForm, StudyHubLoginForm, StudyHubRegisterForm
+from .models import AttemptAnswer, Material, Note, Subject, Test, TestAttempt, Topic, UserProfile, TeacherStudent
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -100,9 +100,9 @@ def register_view(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST' and form.is_valid():
         user = form.save()
         profile, created = UserProfile.objects.get_or_create(user=user)
-        if created:
-            profile.role = form.cleaned_data.get('role', UserProfile.ROLE_STUDENT)
-            profile.save()
+        # Всегда устанавливаем роль из формы (на случай, если профиль уже создан сигналом)
+        profile.role = form.cleaned_data.get('role', UserProfile.ROLE_STUDENT)
+        profile.save()
         login(request, user)
         messages.success(request, 'Аккаунт создан. Добро пожаловать в StudyHub!')
         return redirect('profile')
@@ -119,6 +119,11 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 @login_required
 def profile_view(request: HttpRequest) -> HttpResponse:
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Если роль не установлена, устанавливаем по умолчанию student
+    if not profile.role:
+        profile.role = UserProfile.ROLE_STUDENT
+        profile.save()
 
     form = ProfileForm(request.POST or None, instance=profile)
     if request.method == 'POST' and form.is_valid():
@@ -350,6 +355,7 @@ def student_select_teacher(request: HttpRequest) -> HttpResponse:
     teachers = UserProfile.objects.filter(role=UserProfile.ROLE_TEACHER).select_related('user')
     
     if search_query:
+        # Поиск по username или display_name
         teachers = teachers.filter(
             user__username__icontains=search_query
         ) | teachers.filter(
@@ -357,7 +363,7 @@ def student_select_teacher(request: HttpRequest) -> HttpResponse:
         )
     
     # Исключаем уже выбранных учителей
-    teachers = teachers.exclude(id__in=current_teacher_ids)
+    teachers = teachers.exclude(id__in=current_teacher_ids).order_by('user__username')
     
     # Добавляем количество учеников для каждого учителя
     teachers_with_count = []
@@ -419,3 +425,96 @@ def student_leave_teacher(request: HttpRequest, id: int) -> HttpResponse:
     teacher_student.delete()
     messages.success(request, f'Вы покинули учителя {teacher_username}.')
     return redirect('student_select_teacher')
+
+
+def notes_list(request: HttpRequest) -> HttpResponse:
+    notes = Note.objects.select_related('user', 'subject', 'topic').all()
+    
+    # Фильтрация
+    subject_id = request.GET.get('subject')
+    topic_id = request.GET.get('topic')
+    author_id = request.GET.get('author')
+    
+    if subject_id:
+        notes = notes.filter(subject_id=subject_id)
+    if topic_id:
+        notes = notes.filter(topic_id=topic_id)
+    if author_id:
+        notes = notes.filter(user_id=author_id)
+    
+    subjects = Subject.objects.all()
+    topics = Topic.objects.all() if not subject_id else Topic.objects.filter(subject_id=subject_id)
+    
+    return render(
+        request,
+        'core/notes/note_list.html',
+        {
+            'notes': notes,
+            'subjects': subjects,
+            'topics': topics,
+            'selected_subject': int(subject_id) if subject_id else None,
+            'selected_topic': int(topic_id) if topic_id else None,
+            'selected_author': int(author_id) if author_id else None,
+        },
+    )
+
+
+@login_required
+def note_create(request: HttpRequest) -> HttpResponse:
+    form = NoteForm(request.POST or None)
+    if request.method == 'POST':
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.user = request.user
+            note.save()
+            messages.success(request, 'Конспект успешно создан.')
+            return redirect('note_detail', id=note.id)
+    
+    return render(request, 'core/notes/note_create.html', {'form': form})
+
+
+def note_detail(request: HttpRequest, id: int) -> HttpResponse:
+    note = get_object_or_404(Note.objects.select_related('user', 'subject', 'topic'), pk=id)
+    is_owner = request.user.is_authenticated and note.user == request.user
+    
+    return render(
+        request,
+        'core/notes/note_detail.html',
+        {
+            'note': note,
+            'is_owner': is_owner,
+        },
+    )
+
+
+@login_required
+def note_edit(request: HttpRequest, id: int) -> HttpResponse:
+    note = get_object_or_404(Note, pk=id, user=request.user)
+    form = NoteForm(request.POST or None, instance=note)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Конспект успешно обновлён.')
+            return redirect('note_detail', id=note.id)
+    
+    return render(request, 'core/notes/note_edit.html', {'form': form, 'note': note})
+
+
+@login_required
+def note_delete(request: HttpRequest, id: int) -> HttpResponse:
+    note = get_object_or_404(Note, pk=id, user=request.user)
+    
+    if request.method == 'POST':
+        note.delete()
+        messages.success(request, 'Конспект удалён.')
+        return redirect('notes_list')
+    
+    return render(request, 'core/notes/note_delete.html', {'note': note})
+
+
+@login_required
+def my_notes(request: HttpRequest) -> HttpResponse:
+    notes = Note.objects.filter(user=request.user).select_related('subject', 'topic').order_by('-created_at')
+    
+    return render(request, 'core/notes/my_notes.html', {'notes': notes})

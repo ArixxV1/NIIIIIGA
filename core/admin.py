@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     AttemptAnswer,
     Material,
+    Note,
     Question,
     Subject,
     TeacherStudent,
@@ -125,4 +126,13 @@ class TeacherStudentAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     search_fields = ('teacher__user__username', 'student__user__username', 'teacher__display_name', 'student__display_name')
     readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+
+
+@admin.register(Note)
+class NoteAdmin(admin.ModelAdmin):
+    list_display = ('title', 'user', 'subject', 'topic', 'created_at')
+    list_filter = ('subject', 'created_at')
+    search_fields = ('title', 'content', 'user__username', 'subject__name', 'topic__name')
+    readonly_fields = ('created_at', 'updated_at')
     date_hierarchy = 'created_at'

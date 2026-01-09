@@ -9,7 +9,13 @@
         <div class="d-inline-flex align-items-center gap-2 mb-2">
           <span class="px-3 py-2 sh-chip small">
             <i class="bi bi-person-circle me-1"></i> 
-            {% if profile.is_teacher %}Учитель{% elif profile.is_student %}Ученик{% else %}Личный кабинет{% endif %}
+            {% if profile.is_teacher %}
+              <i class="bi bi-person-badge me-1"></i>Учитель
+            {% elif profile.is_student %}
+              <i class="bi bi-person-check me-1"></i>Ученик
+            {% else %}
+              Личный кабинет (роль не установлена)
+            {% endif %}
           </span>
         </div>
         <h1 class="h3 fw-bold mb-1">Привет, {{ user.username }}!</h1>

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}{{ note.title }} — StudyHub{% endblock %}
+
+{% block content %}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'notes_list' %}">Конспекты</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ note.title }}</li>
+    </ol>
+  </nav>
+
+  <div class="sh-glass sh-card p-4 p-lg-5 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+      <div>
+        <div class="d-inline-flex align-items-center gap-2 mb-2">
+          <span class="px-3 py-2 sh-chip small"><i class="bi bi-journal-text me-1"></i> Конспект</span>
+          {% if note.subject %}
+            <span class="px-3 py-2 sh-chip small"><i class="bi bi-book me-1"></i> {{ note.subject.name }}</span>
+          {% endif %}
+          {% if note.topic %}
+            <span class="px-3 py-2 sh-chip small"><i class="bi bi-tag me-1"></i> {{ note.topic.name }}</span>
+          {% endif %}
+        </div>
+        <h1 class="h3 fw-bold mb-1">{{ note.title }}</h1>
+        <div class="sh-muted">
+          Автор: <strong>{{ note.user.username }}</strong> · 
+          Создан: {{ note.created_at|date:"d.m.Y H:i" }}
+          {% if note.updated_at != note.created_at %}
+            · Обновлен: {{ note.updated_at|date:"d.m.Y H:i" }}
+          {% endif %}
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        {% if is_owner %}
+          <a class="btn btn-primary" href="{% url 'note_edit' note.id %}">
+            <i class="bi bi-pencil me-1"></i> Редактировать
+          </a>
+          <a class="btn btn-outline-danger" href="{% url 'note_delete' note.id %}">
+            <i class="bi bi-trash me-1"></i> Удалить
+          </a>
+        {% endif %}
+        <a class="btn btn-outline-secondary" href="{% url 'notes_list' %}">
+          <i class="bi bi-arrow-left me-1"></i> К списку
+        </a>
+      </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="sh-content">
+      {{ note.content|linebreaksbr }}
+    </div>
+  </div>
+{% endblock %}
+

@@ -124,9 +124,21 @@ class TestAttemptAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'display_name', 'role')
+    list_display = ('user', 'display_name', 'role', 'has_avatar', 'has_links')
     list_filter = ('role',)
-    search_fields = ('user__username', 'display_name')
+    search_fields = ('user__username', 'display_name', 'bio')
+    fields = ('user', 'role', 'display_name', 'bio', 'avatar', 'website', 'github', 'telegram', 'vk')
+    
+    def has_avatar(self, obj):
+        return 'Да' if obj.avatar else 'Нет'
+    has_avatar.short_description = 'Есть фото'
+    has_avatar.boolean = True
+    
+    def has_links(self, obj):
+        links = [obj.website, obj.github, obj.telegram, obj.vk]
+        return 'Да' if any(links) else 'Нет'
+    has_links.short_description = 'Есть ссылки'
+    has_links.boolean = True
 
 
 @admin.register(TeacherStudent)

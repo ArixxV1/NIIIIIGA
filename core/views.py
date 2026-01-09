@@ -98,14 +98,35 @@ def register_view(request: HttpRequest) -> HttpResponse:
 
     form = StudyHubRegisterForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        user = form.save()
-        profile, created = UserProfile.objects.get_or_create(user=user)
-        # Всегда устанавливаем роль из формы (на случай, если профиль уже создан сигналом)
-        profile.role = form.cleaned_data.get('role', UserProfile.ROLE_STUDENT)
-        profile.save()
-        login(request, user)
-        messages.success(request, 'Аккаунт создан. Добро пожаловать в StudyHub!')
-        return redirect('profile')
+        # Временно отключаем сигнал, чтобы создать профиль вручную
+        from django.db.models.signals import post_save
+        from django.contrib.auth import get_user_model
+        from core.signals import ensure_profile
+        
+        User = get_user_model()
+        post_save.disconnect(ensure_profile, sender=User)
+        
+        try:
+            user = form.save()
+            
+            # Создаем профиль явно с правильными значениями
+            profile = UserProfile.objects.create(
+                user=user,
+                role=form.cleaned_data.get('role', UserProfile.ROLE_STUDENT),
+                display_name='',
+                bio='',
+                github=None,
+                telegram=None,
+                vk=None,
+                website=None,
+            )
+            
+            login(request, user)
+            messages.success(request, 'Аккаунт создан. Добро пожаловать в StudyHub!')
+            return redirect('profile')
+        finally:
+            # Включаем сигнал обратно
+            post_save.connect(ensure_profile, sender=User)
 
     return render(request, 'core/auth/register.html', {'form': form})
 
@@ -118,14 +139,25 @@ def logout_view(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def profile_view(request: HttpRequest) -> HttpResponse:
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile, _ = UserProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'role': UserProfile.ROLE_STUDENT,
+            'display_name': '',
+            'bio': '',
+            'github': None,
+            'telegram': None,
+            'vk': None,
+            'website': None,
+        }
+    )
     
     # Если роль не установлена, устанавливаем по умолчанию student
     if not profile.role:
         profile.role = UserProfile.ROLE_STUDENT
         profile.save()
 
-    form = ProfileForm(request.POST or None, instance=profile)
+    form = ProfileForm(request.POST or None, request.FILES or None, instance=profile)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Профиль обновлён.')
@@ -143,6 +175,9 @@ def profile_view(request: HttpRequest) -> HttpResponse:
         .annotate(best=Max('percent'), attempts=Count('id'))
         .order_by('test__topic__subject__name', 'test__topic__name')
     )
+    
+    # Получаем конспекты пользователя
+    user_notes = Note.objects.filter(user=request.user).select_related('subject', 'topic').order_by('-created_at')[:10]
 
     return render(
         request,
@@ -152,6 +187,7 @@ def profile_view(request: HttpRequest) -> HttpResponse:
             'form': form,
             'attempts': attempts,
             'best_by_topic': best_by_topic,
+            'user_notes': user_notes,
         },
     )
 

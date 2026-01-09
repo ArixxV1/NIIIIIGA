@@ -3,33 +3,71 @@
 {% block title %}Профиль — StudyHub{% endblock %}
 
 {% block content %}
-  <div class="sh-glass sh-card p-4 p-lg-5 mb-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-      <div>
-        <div class="d-inline-flex align-items-center gap-2 mb-2">
+  <!-- VERSION: 2.0 - Updated profile with avatar, links, and notes -->
+  <!-- Заголовок профиля -->
+  <div class="sh-glass sh-card p-4 p-lg-5 mb-4 overflow-hidden position-relative">
+    <div class="d-flex flex-wrap align-items-start gap-4">
+      <!-- Аватар -->
+      <div class="flex-shrink-0">
+        {% if profile.avatar %}
+          <img src="{{ profile.avatar.url }}" alt="{{ profile.display_name|default:user.username }}" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover; border: 4px solid rgba(13, 110, 253, 0.2);">
+        {% else %}
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white" style="width: 120px; height: 120px; font-size: 3rem; border: 4px solid rgba(13, 110, 253, 0.2);">
+            <i class="bi bi-person-fill"></i>
+          </div>
+        {% endif %}
+      </div>
+      
+      <!-- Информация о пользователе -->
+      <div class="flex-grow-1">
+        <div class="d-inline-flex align-items-center gap-2 mb-2 flex-wrap">
           <span class="px-3 py-2 sh-chip small">
-            <i class="bi bi-person-circle me-1"></i> 
+            <i class="bi bi-person-circle me-1"></i>
             {% if profile.is_teacher %}
               <i class="bi bi-person-badge me-1"></i>Учитель
             {% elif profile.is_student %}
               <i class="bi bi-person-check me-1"></i>Ученик
             {% else %}
-              Личный кабинет (роль не установлена)
+              Пользователь
             {% endif %}
           </span>
         </div>
-        <h1 class="h3 fw-bold mb-1">Привет, {{ user.username }}!</h1>
-        <div class="sh-muted">
-          {% if profile.is_teacher %}
-            Здесь ваш прогресс и управление учениками.
-          {% elif profile.is_student %}
-            Здесь ваш прогресс и последние попытки тестов.
-          {% else %}
-            Здесь ваш прогресс и последние попытки тестов.
+        <h1 class="h3 fw-bold mb-2">
+          {{ profile.display_name|default:user.username }}
+        </h1>
+        {% if profile.bio %}
+          <p class="sh-muted mb-3" style="line-height: 1.6;">{{ profile.bio }}</p>
+        {% else %}
+          <p class="sh-muted mb-3">Добавьте информацию о себе в настройках профиля.</p>
+        {% endif %}
+        
+        <!-- Ссылки -->
+        <div class="d-flex flex-wrap gap-2">
+          {% if profile.website %}
+            <a href="{{ profile.website }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-globe me-1"></i> Сайт
+            </a>
+          {% endif %}
+          {% if profile.github %}
+            <a href="https://github.com/{{ profile.github }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm">
+              <i class="bi bi-github me-1"></i> GitHub
+            </a>
+          {% endif %}
+          {% if profile.telegram %}
+            <a href="https://t.me/{{ profile.telegram }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-info btn-sm">
+              <i class="bi bi-telegram me-1"></i> Telegram
+            </a>
+          {% endif %}
+          {% if profile.vk %}
+            <a href="https://vk.com/{{ profile.vk }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-vk me-1"></i> VK
+            </a>
           {% endif %}
         </div>
       </div>
-      <div class="d-flex gap-2">
+      
+      <!-- Кнопки действий -->
+      <div class="d-flex gap-2 flex-shrink-0">
         {% if profile.is_teacher %}
           <a class="btn btn-primary" href="{% url 'teacher_dashboard' %}">
             <i class="bi bi-people me-1"></i> Панель учителя
@@ -44,112 +82,238 @@
         </a>
       </div>
     </div>
+  </div>
 
-    <hr class="my-4" />
-
-    <div class="row g-3">
-      <div class="col-12 col-lg-6">
-        <div class="p-3 rounded-4 border bg-white">
-          <div class="fw-semibold mb-2">Профиль</div>
-          <form method="post" class="d-grid gap-2">
-            {% csrf_token %}
-            <div>
-              <label class="form-label mb-1">{{ form.display_name.label }}</label>
-              {{ form.display_name }}
-              {% if form.display_name.errors %}<div class="text-danger small mt-1">{{ form.display_name.errors }}</div>{% endif %}
-            </div>
-            <div>
-              <label class="form-label mb-1">{{ form.bio.label }}</label>
-              {{ form.bio }}
-              {% if form.bio.errors %}<div class="text-danger small mt-1">{{ form.bio.errors }}</div>{% endif %}
-            </div>
-            <button class="btn btn-primary" type="submit">
-              <i class="bi bi-save2 me-2"></i> Сохранить
-            </button>
-          </form>
-        </div>
+  <!-- Настройки профиля -->
+  <div class="sh-glass sh-card p-4 p-lg-5 mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="h5 fw-bold mb-1">Настройки профиля</h2>
+        <p class="small sh-muted mb-0">Обновите информацию о себе, загрузите фото и добавьте ссылки.</p>
       </div>
-      <div class="col-12 col-lg-6">
-        <div class="p-3 rounded-4 border bg-white h-100">
-          <div class="fw-semibold mb-2">Подсказка</div>
-          <div class="small sh-muted">
-            {% if profile.is_teacher %}
-              Используйте панель учителя для управления учениками и отслеживания их успеваемости.
-            {% elif profile.is_student %}
-              Пройдите тесты по темам — результаты автоматически сохраняются и отображаются ниже. Выберите учителей для отслеживания вашего прогресса.
-            {% else %}
-              Пройдите тесты по темам — результаты автоматически сохраняются и отображаются ниже.
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="d-grid gap-4">
+      {% csrf_token %}
+      
+      <div class="row g-4">
+        <!-- Левая колонка -->
+        <div class="col-12 col-lg-6">
+          <div>
+            <label class="form-label fw-semibold">{{ form.display_name.label }}</label>
+            {{ form.display_name }}
+            {% if form.display_name.errors %}<div class="text-danger small mt-1">{{ form.display_name.errors }}</div>{% endif %}
+          </div>
+          
+          <div class="mt-3">
+            <label class="form-label fw-semibold">{{ form.bio.label }}</label>
+            {{ form.bio }}
+            {% if form.bio.errors %}<div class="text-danger small mt-1">{{ form.bio.errors }}</div>{% endif %}
+            <div class="form-text">Расскажите о себе, своих интересах и целях.</div>
+          </div>
+          
+          <div class="mt-3">
+            <label class="form-label fw-semibold">{{ form.avatar.label }}</label>
+            {{ form.avatar }}
+            {% if form.avatar.errors %}<div class="text-danger small mt-1">{{ form.avatar.errors }}</div>{% endif %}
+            {% if profile.avatar %}
+              <div class="mt-2">
+                <small class="text-muted">Текущее фото:</small>
+                <img src="{{ profile.avatar.url }}" alt="Avatar" class="d-block mt-1 rounded" style="max-width: 100px; max-height: 100px; object-fit: cover;">
+              </div>
             {% endif %}
+            <div class="form-text">Рекомендуемый размер: 400x400px. Форматы: JPG, PNG.</div>
+          </div>
+        </div>
+        
+        <!-- Правая колонка - Ссылки -->
+        <div class="col-12 col-lg-6">
+          <h3 class="h6 fw-semibold mb-3">Социальные сети и ссылки</h3>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.website.label }}</label>
+            {{ form.website }}
+            {% if form.website.errors %}<div class="text-danger small mt-1">{{ form.website.errors }}</div>{% endif %}
+            <div class="form-text">URL вашего сайта или портфолио.</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.github.label }}</label>
+            <div class="input-group">
+              <span class="input-group-text">github.com/</span>
+              {{ form.github }}
+            </div>
+            {% if form.github.errors %}<div class="text-danger small mt-1">{{ form.github.errors }}</div>{% endif %}
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.telegram.label }}</label>
+            <div class="input-group">
+              <span class="input-group-text">@</span>
+              {{ form.telegram }}
+            </div>
+            {% if form.telegram.errors %}<div class="text-danger small mt-1">{{ form.telegram.errors }}</div>{% endif %}
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.vk.label }}</label>
+            <div class="input-group">
+              <span class="input-group-text">vk.com/</span>
+              {{ form.vk }}
+            </div>
+            {% if form.vk.errors %}<div class="text-danger small mt-1">{{ form.vk.errors }}</div>{% endif %}
           </div>
         </div>
       </div>
-    </div>
+      
+      <div class="border-top pt-4">
+        <button class="btn btn-primary btn-lg" type="submit">
+          <i class="bi bi-save2 me-2"></i> Сохранить изменения
+        </button>
+      </div>
+    </form>
   </div>
 
-  <div class="row g-3 g-lg-4">
+  <!-- Мои конспекты -->
+  <div class="sh-glass sh-card p-4 p-lg-5 mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="h5 fw-bold mb-1">Мои конспекты</h2>
+        <p class="small sh-muted mb-0">Ваши созданные конспекты. Последние 10.</p>
+      </div>
+      <a class="btn btn-outline-primary" href="{% url 'note_create' %}">
+        <i class="bi bi-plus-circle me-1"></i> Создать конспект
+      </a>
+    </div>
+
+    {% if user_notes %}
+      <div class="row g-3">
+        {% for note in user_notes %}
+          <div class="col-12 col-md-6">
+            <div class="sh-card sh-card-hover p-3 border rounded-3 h-100">
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                <h3 class="h6 fw-semibold mb-0 flex-grow-1">{{ note.title|truncatewords:10 }}</h3>
+                <a href="{% url 'note_detail' note.id %}" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
+              {% if note.subject or note.topic %}
+                <div class="small text-muted mb-2">
+                  {% if note.subject %}
+                    <i class="bi bi-book me-1"></i>{{ note.subject.name }}
+                  {% endif %}
+                  {% if note.topic %}
+                    <i class="bi bi-tag me-1 ms-2"></i>{{ note.topic.name }}
+                  {% endif %}
+                </div>
+              {% endif %}
+              <p class="small text-muted mb-0" style="line-height: 1.4;">{{ note.content|truncatewords:20 }}</p>
+              <div class="mt-2 pt-2 border-top">
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-muted">
+                    <i class="bi bi-calendar me-1"></i>{{ note.created_at|date:"d.m.Y" }}
+                  </small>
+                  <a href="{% url 'note_edit' note.id %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil me-1"></i> Редактировать
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="mt-3 text-center">
+        <a href="{% url 'my_notes' %}" class="btn btn-outline-primary">
+          <i class="bi bi-journal-text me-1"></i> Все мои конспекты
+        </a>
+      </div>
+    {% else %}
+      <div class="alert alert-info sh-glass sh-card mb-0">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-journal-plus" style="font-size: 2rem;"></i>
+          <div>
+            <div class="fw-semibold mb-1">Пока нет конспектов</div>
+            <div class="small">Создайте свой первый конспект, чтобы он появился здесь.</div>
+          </div>
+          <a href="{% url 'note_create' %}" class="btn btn-primary ms-auto">
+            <i class="bi bi-plus-circle me-1"></i> Создать конспект
+          </a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Статистика и прогресс -->
+  <div class="row g-4">
     <div class="col-12 col-lg-6">
-      <div class="sh-glass sh-card p-4">
-        <h2 class="h5 fw-semibold mb-2 sh-section-title">Прогресс по темам</h2>
-        <div class="small sh-muted mb-3">Лучший результат и количество попыток.</div>
+      <div class="sh-glass sh-card p-4 p-lg-5">
+        <h2 class="h5 fw-semibold mb-3 sh-section-title">Прогресс по темам</h2>
+        <div class="small sh-muted mb-4">Лучший результат и количество попыток.</div>
 
         {% if best_by_topic %}
-          <div class="d-grid gap-2">
+          <div class="d-grid gap-3">
             {% for row in best_by_topic %}
-              <div class="p-3 rounded-4 border bg-white">
-                <div class="d-flex justify-content-between align-items-start gap-2">
-                  <div>
-                    <div class="fw-semibold">{{ row.test__topic__name }}</div>
-                    <div class="small sh-muted">{{ row.test__topic__subject__name }}</div>
+              <div class="p-3 rounded-3 border bg-white sh-card-hover">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold mb-1">{{ row.test__topic__name }}</div>
+                    <div class="small text-muted">{{ row.test__topic__subject__name }}</div>
                   </div>
-                  <div class="text-end">
-                    <div class="fw-bold sh-kbd">{{ row.best|floatformat:0 }}%</div>
-                    <div class="small sh-muted sh-kbd">попыток: {{ row.attempts }}</div>
+                  <div class="text-end flex-shrink-0">
+                    <div class="fw-bold sh-kbd text-primary" style="font-size: 1.25rem;">{{ row.best|floatformat:0 }}%</div>
+                    <div class="small text-muted sh-kbd">попыток: {{ row.attempts }}</div>
                   </div>
+                </div>
+                <div class="progress mt-2" style="height: 6px;">
+                  <div class="progress-bar bg-primary" style="width: {{ row.best|floatformat:0 }}%"></div>
                 </div>
               </div>
             {% endfor %}
           </div>
         {% else %}
           <div class="alert alert-info sh-glass sh-card mb-0">
-            Пока нет попыток тестов. Пройдите любой тест — и прогресс появится здесь.
+            <i class="bi bi-info-circle me-2"></i>Пока нет попыток тестов. Пройдите любой тест — и прогресс появится здесь.
           </div>
         {% endif %}
       </div>
     </div>
 
     <div class="col-12 col-lg-6">
-      <div class="sh-glass sh-card p-4">
-        <h2 class="h5 fw-semibold mb-2 sh-section-title">Последние попытки</h2>
-        <div class="small sh-muted mb-3">До 20 последних результатов.</div>
+      <div class="sh-glass sh-card p-4 p-lg-5">
+        <h2 class="h5 fw-semibold mb-3 sh-section-title">Последние попытки</h2>
+        <div class="small sh-muted mb-4">До 20 последних результатов.</div>
 
         {% if attempts %}
-          <div class="d-grid gap-2">
+          <div class="d-grid gap-3">
             {% for a in attempts %}
-              <div class="p-3 rounded-4 border bg-white">
-                <div class="d-flex justify-content-between align-items-start gap-2">
-                  <div>
-                    <div class="fw-semibold">{{ a.test.title }}</div>
-                    <div class="small sh-muted">{{ a.test.topic.subject.name }} · {{ a.test.topic.name }}</div>
+              <div class="p-3 rounded-3 border bg-white sh-card-hover">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold mb-1">{{ a.test.title }}</div>
+                    <div class="small text-muted">{{ a.test.topic.subject.name }} · {{ a.test.topic.name }}</div>
                   </div>
-                  <div class="text-end">
-                    <div class="fw-bold sh-kbd">{{ a.percent|floatformat:0 }}%</div>
-                    <div class="small sh-muted sh-kbd">{{ a.correct_count }}/{{ a.total }}</div>
+                  <div class="text-end flex-shrink-0">
+                    <div class="fw-bold sh-kbd {% if a.percent >= 80 %}text-success{% elif a.percent >= 60 %}text-warning{% else %}text-danger{% endif %}" style="font-size: 1.25rem;">
+                      {{ a.percent|floatformat:0 }}%
+                    </div>
+                    <div class="small text-muted sh-kbd">{{ a.correct_count }}/{{ a.total }}</div>
                   </div>
                 </div>
-                <div class="progress mt-2">
-                  <div class="progress-bar" style="width: {{ a.percent|floatformat:0 }}%"></div>
+                <div class="progress mt-2" style="height: 6px;">
+                  <div class="progress-bar {% if a.percent >= 80 %}bg-success{% elif a.percent >= 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ a.percent|floatformat:0 }}%"></div>
+                </div>
+                <div class="small text-muted mt-2">
+                  <i class="bi bi-calendar me-1"></i>{{ a.created_at|date:"d.m.Y H:i" }}
                 </div>
               </div>
             {% endfor %}
           </div>
         {% else %}
           <div class="alert alert-info sh-glass sh-card mb-0">
-            Пока пусто. Перейдите к предметам и пройдите тест.
+            <i class="bi bi-info-circle me-2"></i>Пока пусто. Перейдите к предметам и пройдите тест.
           </div>
         {% endif %}
       </div>
     </div>
   </div>
 {% endblock %}
-
-

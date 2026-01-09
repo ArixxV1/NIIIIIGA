@@ -1011,7 +1011,7 @@ def seed_studyhub_data(sender, **kwargs):
                 title='Конспект: Решение квадратных уравнений',
                 subject=math,
                 topic=topic_alg,
-                defaults={
+        defaults={
                     'content': 'Квадратное уравнение имеет вид ax² + bx + c = 0, где a ≠ 0.\n\n'
                     'Алгоритм решения:\n'
                     '1. Вычислить дискриминант: D = b² - 4ac\n'
@@ -1033,7 +1033,7 @@ def seed_studyhub_data(sender, **kwargs):
                 title='Конспект: Основы Python',
                 subject=cs,
                 topic=topic_py,
-                defaults={
+        defaults={
                     'content': 'Python — высокоуровневый язык программирования.\n\n'
                     'Основные типы данных:\n'
                     '• int — целые числа: 5, -10\n'
@@ -1067,7 +1067,7 @@ def seed_studyhub_data(sender, **kwargs):
                 title='Конспект: Кинематика движения',
                 subject=physics,
                 topic=topic_kin,
-                defaults={
+        defaults={
                     'content': 'Кинематика изучает движение тел без учета причин движения.\n\n'
                     'Основные величины:\n'
                     '• Скорость v = s/t (м/с)\n'
@@ -1096,7 +1096,7 @@ def seed_studyhub_data(sender, **kwargs):
                 title='Конспект: Present Simple',
                 subject=eng,
                 topic=topic_eng,
-                defaults={
+        defaults={
                     'content': 'Present Simple используется для регулярных действий, привычек и общих истин.\n\n'
                     'Утвердительная форма:\n'
                     '• I/You/We/They + глагол: I go, you work\n'
@@ -1123,7 +1123,7 @@ def seed_studyhub_data(sender, **kwargs):
                 title='Конспект: Треугольники',
                 subject=math,
                 topic=topic_geo,
-                defaults={
+        defaults={
                     'content': 'Треугольник — геометрическая фигура с тремя сторонами и тремя углами.\n\n'
                     'Основные свойства:\n'
                     '• Сумма углов: 180°\n'
@@ -1137,12 +1137,24 @@ def seed_studyhub_data(sender, **kwargs):
                     'В равностороннем треугольнике все углы равны 60°.\n'
                     'В прямоугольном треугольнике один угол равен 90°.'
                 }
-            )
+    )
 
 
 @receiver(post_save, sender=get_user_model())
 def ensure_profile(sender, instance, created, **kwargs):
+    """Создает профиль для нового пользователя, если его еще нет"""
     if created:
-        UserProfile.objects.get_or_create(user=instance)
+        # Проверяем, не создан ли уже профиль в view регистрации
+        if not UserProfile.objects.filter(user=instance).exists():
+            UserProfile.objects.create(
+                user=instance,
+                role=UserProfile.ROLE_STUDENT,
+                display_name='',
+                bio='',
+                github=None,
+                telegram=None,
+                vk=None,
+                website=None,
+            )
 
 

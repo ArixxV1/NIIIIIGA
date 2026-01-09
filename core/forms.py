@@ -53,10 +53,42 @@ class ProfileForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Коротко о себе…'}),
     )
+    avatar = forms.ImageField(
+        label='Фото профиля',
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+    )
+    website = forms.URLField(
+        label='Сайт',
+        required=False,
+        widget=forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://example.com'}),
+    )
+    github = forms.CharField(
+        label='GitHub',
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'username'}),
+    )
+    telegram = forms.CharField(
+        label='Telegram',
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'username'}),
+    )
+    
+    def clean_telegram(self):
+        telegram = self.cleaned_data.get('telegram', '').strip()
+        if telegram:
+            # Убираем @ если есть
+            telegram = telegram.lstrip('@')
+        return telegram
+    vk = forms.CharField(
+        label='VK',
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'username или id'}),
+    )
 
     class Meta:
         model = UserProfile
-        fields = ('display_name', 'bio')
+        fields = ('display_name', 'bio', 'avatar', 'website', 'github', 'telegram', 'vk')
 
 
 class NoteForm(forms.ModelForm):

@@ -134,9 +134,14 @@ class UserProfile(models.Model):
     ]
     
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
-    display_name = models.CharField(max_length=80, blank=True)
-    bio = models.TextField(blank=True)
+    display_name = models.CharField(max_length=80, blank=True, verbose_name='Отображаемое имя')
+    bio = models.TextField(blank=True, verbose_name='О себе')
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_STUDENT, verbose_name='Роль')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='Фото профиля')
+    website = models.URLField(blank=True, null=True, max_length=200, verbose_name='Сайт')
+    github = models.CharField(max_length=100, blank=True, null=True, verbose_name='GitHub')
+    telegram = models.CharField(max_length=100, blank=True, null=True, verbose_name='Telegram')
+    vk = models.CharField(max_length=100, blank=True, null=True, verbose_name='VK')
 
     class Meta:
         verbose_name = 'Профиль'

@@ -129,16 +129,13 @@ class UserProfileAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'display_name', 'bio')
     fields = ('user', 'role', 'display_name', 'bio', 'avatar', 'website', 'github', 'telegram', 'vk')
     
+    @admin.display(boolean=True, description='Есть фото')
     def has_avatar(self, obj):
-        return 'Да' if obj.avatar else 'Нет'
-    has_avatar.short_description = 'Есть фото'
-    has_avatar.boolean = True
+        return bool(obj.avatar)
     
+    @admin.display(boolean=True, description='Есть ссылки')
     def has_links(self, obj):
-        links = [obj.website, obj.github, obj.telegram, obj.vk]
-        return 'Да' if any(links) else 'Нет'
-    has_links.short_description = 'Есть ссылки'
-    has_links.boolean = True
+        return bool(obj.website or obj.github or obj.telegram or obj.vk)
 
 
 @admin.register(TeacherStudent)
